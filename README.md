@@ -1,33 +1,103 @@
-# Invoice Processor - Serverless Application
+# Invoice Processor
 
-Este proyecto implementa un procesador de facturas serverless utilizando AWS Lambda, SQS, API Gateway y DynamoDB.
+Sistema de procesamiento de facturas usando AWS Lambda, SQS y DynamoDB.
 
 ## Arquitectura
 
-El sistema está compuesto por los siguientes componentes:
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API Gateway
+    participant Lambda Enqueue
+    participant SQS
+    participant Lambda Process
+    participant DynamoDB
 
-1. **API Gateway**: Expone un endpoint REST para recibir facturas
-2. **Lambda (enqueue_invoice)**: Valida y envía las facturas a una cola SQS
-3. **SQS**: Almacena las facturas pendientes de procesamiento
-4. **Lambda (process_invoice)**: Procesa las facturas y las guarda en DynamoDB
-5. **DynamoDB**: Almacena las facturas procesadas
+    Client->>API Gateway: POST /invoice
+    API Gateway->>Lambda Enqueue: Invoke
+    Lambda Enqueue->>SQS: Send Message
+    SQS->>Lambda Process: Trigger
+    Lambda Process->>DynamoDB: Put Item
+
+    Note over Lambda Enqueue: Validates invoice<br/>and enqueues
+    Note over Lambda Process: Converts floats to Decimal<br/>and stores in DynamoDB
+```
+
+## Flujo de Datos
+
+1. **Cliente → API Gateway**
+   - El cliente envía una factura en formato JSON
+   - URL: `https://usz5xhjj03.execute-api.eu-west-1.amazonaws.com/prod/invoice`
+
+2. **API Gateway → Lambda Enqueue**
+   - API Gateway invoca la función Lambda `enqueue-invoice`
+   - La función valida la factura
+   - Si es válida, la envía a SQS
+
+3. **Lambda Enqueue → SQS**
+   - La factura se encola en SQS
+   - Se genera un MessageId único
+
+4. **SQS → Lambda Process**
+   - SQS dispara automáticamente la función Lambda `process-invoice`
+   - La función recibe el mensaje de SQS
+
+5. **Lambda Process → DynamoDB**
+   - Convierte los números float a Decimal
+   - Almacena la factura en DynamoDB
+   - Incluye timestamp de procesamiento
+
+## Estructura de Datos
+
+### Factura de Entrada
+```json
+{
+    "invoice_id": "INV-001",
+    "customer_name": "Cliente de Prueba",
+    "items": [
+        {
+            "description": "Producto 1",
+            "quantity": 2,
+            "price": 10.00
+        }
+    ],
+    "total": 35.50
+}
+```
+
+### En DynamoDB
+```json
+{
+    "invoice_id": "INV-001",
+    "customer_name": "Cliente de Prueba",
+    "items": [
+        {
+            "description": "Producto 1",
+            "quantity": 2,
+            "price": "10.00"  // Decimal
+        }
+    ],
+    "total": "35.50",  // Decimal
+    "processed_at": "1234567890"  // Timestamp en milisegundos
+}
+```
 
 ## Requisitos
 
-- AWS CLI configurado con credenciales válidas
-- Terraform >= 1.0.0
-- Python 3.9
-- Bash
+- Python 3.12
+- AWS CLI
+- Terraform
+- zip
 
 ## Instalación
 
 1. Clonar el repositorio
-2. Ejecutar el script de empaquetado:
+2. Instalar dependencias:
    ```bash
-   chmod +x package.sh
-   ./package.sh
+   pip install -r requirements.txt
    ```
-3. Inicializar y aplicar la infraestructura con Terraform:
+3. Configurar AWS CLI
+4. Ejecutar Terraform:
    ```bash
    cd terraform
    terraform init
@@ -36,47 +106,20 @@ El sistema está compuesto por los siguientes componentes:
 
 ## Uso
 
-Una vez desplegado, puedes enviar facturas al endpoint de API Gateway. El formato de la factura debe ser:
-
-```json
-{
-  "invoice_id": "INV-001",
-  "customer_name": "Cliente Ejemplo",
-  "items": [
-    {
-      "description": "Producto 1",
-      "quantity": 2,
-      "price": 10.00
-    }
-  ],
-  "total": 20.00
-}
-```
-
-## Estructura del Proyecto
-
-```
-.
-├── src/
-│   ├── enqueue_invoce/
-│   │   ├── lambda_function.py
-│   │   └── requirements.txt
-│   └── process_invoice/
-│       ├── lambda_function.py
-│       └── requirements.txt
-├── terraform/
-│   ├── main.tf
-│   ├── variables.tf
-│   └── outputs.tf
-├── package.sh
-└── README.md
-```
-
-## Limpieza
-
-Para eliminar todos los recursos creados:
-
+Para enviar una factura:
 ```bash
-cd terraform
-terraform destroy
+curl -X POST https://usz5xhjj03.execute-api.eu-west-1.amazonaws.com/prod/invoice \
+  -H "Content-Type: application/json" \
+  -d '{
+    "invoice_id": "INV-001",
+    "customer_name": "Cliente de Prueba",
+    "items": [
+      {
+        "description": "Producto 1",
+        "quantity": 2,
+        "price": 10.00
+      }
+    ],
+    "total": 35.50
+  }'
 ``` 
