@@ -18,6 +18,13 @@ resource "aws_apigatewayv2_api" "invoice_api" {
   description   = "API para procesamiento de facturas"
 }
 
+# API Gateway Stage
+resource "aws_apigatewayv2_stage" "prod" {
+  api_id = aws_apigatewayv2_api.invoice_api.id
+  name   = "prod"
+  auto_deploy = true
+}
+
 # SQS Queue
 resource "aws_sqs_queue" "invoice_queue" {
   name                      = "invoice-processing-queue"
@@ -153,8 +160,11 @@ resource "aws_apigatewayv2_integration" "lambda_integration" {
   api_id           = aws_apigatewayv2_api.invoice_api.id
   integration_type = "AWS_PROXY"
   integration_uri  = aws_lambda_function.enqueue_invoice.invoke_arn
+  integration_method = "POST"
+  payload_format_version = "2.0"
 }
 
+# API Gateway Route
 resource "aws_apigatewayv2_route" "invoice_route" {
   api_id    = aws_apigatewayv2_api.invoice_api.id
   route_key = "POST /invoice"
@@ -167,5 +177,16 @@ resource "aws_lambda_permission" "api_gateway_permission" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.enqueue_invoice.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.invoice_api.execution_arn}/*/*"
+  source_arn    = "${aws_apigatewayv2_api.invoice_api.execution_arn}/*/*/invoice"
+}
+
+# CloudWatch Log Group for Lambda functions
+resource "aws_cloudwatch_log_group" "lambda_logs" {
+  name              = "/aws/lambda/${aws_lambda_function.enqueue_invoice.function_name}"
+  retention_in_days = 14
+}
+
+resource "aws_cloudwatch_log_group" "process_lambda_logs" {
+  name              = "/aws/lambda/${aws_lambda_function.process_invoice.function_name}"
+  retention_in_days = 14
 }

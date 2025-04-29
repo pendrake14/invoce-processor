@@ -218,3 +218,4 @@ temp_deps/
 .DS_Store
 Thumbs.db
 .DS_Store
+terraform/terraform.tfstate.backup

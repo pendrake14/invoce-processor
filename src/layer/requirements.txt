@@ -1,1 +1,3 @@
 # Las dependencias están en la capa common-dependencies 
+boto3==1.34.34
+python-json-logger==2.0.7 
