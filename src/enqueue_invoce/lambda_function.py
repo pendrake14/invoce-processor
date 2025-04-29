@@ -1,6 +1,11 @@
 import json
 import os
 import boto3
+import logging
+
+# Configure logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 # Initialize SQS client
 sqs = boto3.client('sqs')
@@ -20,11 +25,14 @@ def validate_invoice(invoice):
 
 def lambda_handler(event, context):
     try:
+        logger.info("Received event: %s", event)
+        
         # Parse the incoming invoice
         if 'body' not in event:
             raise ValueError("Missing 'body' in event")
             
         invoice = json.loads(event['body'])
+        logger.info("Parsed invoice: %s", invoice)
         
         # Validate the invoice
         validate_invoice(invoice)
@@ -35,6 +43,8 @@ def lambda_handler(event, context):
             MessageBody=json.dumps(invoice)
         )
         
+        logger.info("Invoice enqueued successfully. Message ID: %s", response['MessageId'])
+        
         return {
             'statusCode': 200,
             'body': json.dumps({
@@ -44,6 +54,7 @@ def lambda_handler(event, context):
         }
         
     except ValueError as e:
+        logger.error("Validation error: %s", str(e))
         return {
             'statusCode': 400,
             'body': json.dumps({
@@ -51,6 +62,7 @@ def lambda_handler(event, context):
             })
         }
     except Exception as e:
+        logger.error("Unexpected error: %s", str(e))
         return {
             'statusCode': 500,
             'body': json.dumps({

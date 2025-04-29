@@ -187,14 +187,3 @@ resource "aws_lambda_permission" "api_gateway_permission" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.invoice_api.execution_arn}/*/*/invoice"
 }
-
-# CloudWatch Log Group for Lambda functions
-resource "aws_cloudwatch_log_group" "lambda_logs" {
-  name              = "/aws/lambda/${aws_lambda_function.enqueue_invoice.function_name}"
-  retention_in_days = 14
-}
-
-resource "aws_cloudwatch_log_group" "process_lambda_logs" {
-  name              = "/aws/lambda/${aws_lambda_function.process_invoice.function_name}"
-  retention_in_days = 14
-}
