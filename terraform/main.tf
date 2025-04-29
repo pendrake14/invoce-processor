@@ -97,6 +97,14 @@ resource "aws_iam_role_policy" "lambda_policy" {
   })
 }
 
+# Lambda Layer
+resource "aws_lambda_layer_version" "common_dependencies" {
+  layer_name          = "common-dependencies"
+  filename            = "../src/layer/layer.zip"
+  compatible_runtimes = ["python3.12"]
+  description         = "Common dependencies for invoice processing"
+}
+
 # Lambda function for enqueueing invoices
 resource "aws_lambda_function" "enqueue_invoice" {
   filename         = "../src/enqueue_invoce/lambda_function.zip"
@@ -106,6 +114,7 @@ resource "aws_lambda_function" "enqueue_invoice" {
   runtime          = "python3.12"
   timeout          = 30
   memory_size      = 128
+  layers           = [aws_lambda_layer_version.common_dependencies.arn]
 
   environment {
     variables = {
@@ -123,6 +132,7 @@ resource "aws_lambda_function" "process_invoice" {
   runtime          = "python3.12"
   timeout          = 30
   memory_size      = 128
+  layers           = [aws_lambda_layer_version.common_dependencies.arn]
 
   environment {
     variables = {
