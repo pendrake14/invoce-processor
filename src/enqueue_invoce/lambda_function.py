@@ -1,16 +1,6 @@
 import json
 import os
 import boto3
-from python_json_logger import JsonFormatter
-import logging
-
-# Configure logging
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-formatter = JsonFormatter()
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 # Initialize SQS client
 sqs = boto3.client('sqs')
@@ -31,6 +21,9 @@ def validate_invoice(invoice):
 def lambda_handler(event, context):
     try:
         # Parse the incoming invoice
+        if 'body' not in event:
+            raise ValueError("Missing 'body' in event")
+            
         invoice = json.loads(event['body'])
         
         # Validate the invoice
@@ -42,11 +35,6 @@ def lambda_handler(event, context):
             MessageBody=json.dumps(invoice)
         )
         
-        logger.info("Invoice enqueued successfully", extra={
-            "invoice_id": invoice['invoice_id'],
-            "message_id": response['MessageId']
-        })
-        
         return {
             'statusCode': 200,
             'body': json.dumps({
@@ -56,7 +44,6 @@ def lambda_handler(event, context):
         }
         
     except ValueError as e:
-        logger.error("Validation error", extra={"error": str(e)})
         return {
             'statusCode': 400,
             'body': json.dumps({
@@ -64,10 +51,10 @@ def lambda_handler(event, context):
             })
         }
     except Exception as e:
-        logger.error("Unexpected error", extra={"error": str(e)})
         return {
             'statusCode': 500,
             'body': json.dumps({
-                'error': 'Internal server error'
+                'error': 'Internal server error',
+                'message': str(e)
             })
         } 

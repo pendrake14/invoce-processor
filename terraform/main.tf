@@ -128,6 +128,10 @@ resource "aws_lambda_function" "enqueue_invoice" {
       QUEUE_URL = aws_sqs_queue.invoice_queue.url
     }
   }
+
+  depends_on = [
+    aws_lambda_layer_version.common_dependencies
+  ]
 }
 
 # Lambda function for processing invoices
@@ -146,6 +150,10 @@ resource "aws_lambda_function" "process_invoice" {
       DYNAMODB_TABLE = aws_dynamodb_table.invoices.name
     }
   }
+
+  depends_on = [
+    aws_lambda_layer_version.common_dependencies
+  ]
 }
 
 # SQS Trigger for process_invoice Lambda
