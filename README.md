@@ -27,7 +27,7 @@ sequenceDiagram
 
 1. **Cliente → API Gateway**
    - El cliente envía una factura en formato JSON
-   - URL: `https://usz5xhjj03.execute-api.eu-west-1.amazonaws.com/prod/invoice`
+   - URL: `https://******/prod/invoice`
 
 2. **API Gateway → Lambda Enqueue**
    - API Gateway invoca la función Lambda `enqueue-invoice`
@@ -108,7 +108,7 @@ sequenceDiagram
 
 Para enviar una factura:
 ```bash
-curl -X POST https://usz5xhjj03.execute-api.eu-west-1.amazonaws.com/prod/invoice \
+curl -X POST https://**********/prod/invoice \
   -H "Content-Type: application/json" \
   -d '{
     "invoice_id": "INV-001",
