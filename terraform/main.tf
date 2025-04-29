@@ -103,7 +103,7 @@ resource "aws_lambda_function" "enqueue_invoice" {
   function_name    = "enqueue-invoice"
   role             = aws_iam_role.lambda_role.arn
   handler          = "lambda_function.lambda_handler"
-  runtime          = "python3.9"
+  runtime          = "python3.12"
   timeout          = 30
   memory_size      = 128
 
@@ -120,7 +120,7 @@ resource "aws_lambda_function" "process_invoice" {
   function_name    = "process-invoice"
   role             = aws_iam_role.lambda_role.arn
   handler          = "lambda_function.lambda_handler"
-  runtime          = "python3.9"
+  runtime          = "python3.12"
   timeout          = 30
   memory_size      = 128
 

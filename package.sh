@@ -9,8 +9,8 @@ for lambda in "${LAMBDAS[@]}"; do
     # Entrar al directorio de la función
     cd src/$lambda
     
-    # Crear y activar entorno virtual
-    python3 -m venv venv
+    # Crear y activar entorno virtual con Python 3.12
+    python3.12 -m venv venv
     source venv/bin/activate
     
     # Instalar dependencias
@@ -19,15 +19,14 @@ for lambda in "${LAMBDAS[@]}"; do
     # Crear directorio temporal y copiar dependencias
     mkdir -p package
     cd package
-    cp -r ../venv/lib/python3.9/site-packages/* .
+    cp -r ../venv/lib/python3.12/site-packages/* .
     cp ../lambda_function.py .
     
     # Crear el zip
     zip -r ../lambda_function.zip .
     
-    cd ..
-    
     # Limpiar
+    cd ..
     deactivate
     rm -rf venv package
     cd ../../
